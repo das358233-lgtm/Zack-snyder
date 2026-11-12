@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Business Profit & Loss Calculator</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: Arial, sans-serif;
+  background: #eef2ff;
+  padding: 25px 12px;
+  color: #1e293b;
+}
+.container {
+  max-width: 480px;
+  margin: 30px auto;
+  background: white;
+  padding: 28px;
+  border-radius: 16px;
+  box-shadow: 0 6px 25px #dbe0ed;
+}
+h1 {
+  text-align: center;
+  color: #4338ca;
+}
+.subtitle {
+  text-align: center;
+  color: #64748b;
+}
+label {
+  display: block;
+  margin-top: 18px;
+  font-weight: bold;
+}
+input, button {
+  width: 100%;
+  padding: 13px;
+  margin-top: 8px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+input { border: 1px solid #cbd5e1; }
+button {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 24px;
+}
+button:hover { background: #3730a3; }
+.results {
+  background: #eef2ff;
+  padding: 18px;
+  border-radius: 10px;
+  margin-top: 22px;
+}
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0;
+}
+.value {
+  font-weight: bold;
+  text-align: right;
+}
+.profit { color: #15803d; }
+.loss { color: #dc2626; }
+.error { color: #b91c1c; }
+.note { color: #64748b; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Business Profit & Loss Calculator</h1>
+  <p class="subtitle">
+    Analyze your business performance easily.
+  </p>
+
+  <label for="sales">Total Sales Revenue (₹)</label>
+  <input id="sales" type="number" min="0"
+    step="any" placeholder="Example: 100000">
+
+  <label for="cost">Cost of Goods Sold (₹)</label>
+  <input id="cost" type="number" min="0"
+    step="any" placeholder="Example: 45000">
+
+  <label for="operating">Operating Expenses (₹)</label>
+  <input id="operating" type="number" min="0"
+    step="any" placeholder="Example: 20000">
+
+  <label for="other">Other Expenses (₹)</label>
+  <input id="other" type="number" min="0"
+    step="any" placeholder="Example: 5000">
+
+  <button onclick="calculateProfit()">
+    Calculate Profit or Loss
+  </button>
+
+  <p id="error" class="error" role="alert"></p>
+
+  <div id="results" class="results" hidden>
+    <h2>Business Financial Summary</h2>
+
+    <div class="result-row">
+      <span>Total Revenue:</span>
+      <span id="revenue" class="value"></span>
+    </div>
+
+    <div class="result-row">
+      <span>Total Expenses:</span>
+      <span id="expenses" class="value"></span>
+    </div>
+
+    <div class="result-row">
+      <span>Gross Profit:</span>
+      <span id="gross" class="value"></span>
+    </div>
+
+    <div class="result-row">
+      <span>Net Profit / Loss:</span>
+      <span id="net" class="value"></span>
+    </div>
+
+    <div class="result-row">
+      <span>Net Profit Margin:</span>
+      <span id="margin" class="value"></span>
+    </div>
+
+    <h3 id="status"></h3>
+  </div>
+
+  <p class="note">
+    This is a simplified business calculator.
+    Net profit is calculated before income tax.
+    Enter all relevant expenses for a meaningful result.
+  </p>
+</div>
+
+<script>
+const money = value =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2
+  }).format(value);
+
+function calculateProfit() {
+  const ids = ["sales", "cost", "operating", "other"];
+  const inputs = ids.map(id =>
+    document.getElementById(id).value
+  );
+  const values = inputs.map(Number);
+  const error = document.getElementById("error");
+  const results = document.getElementById("results");
+
+  error.textContent = "";
+  results.hidden = true;
+
+  if (inputs.some(v => v.trim() === "") ||
+      values.some(v => !Number.isFinite(v) || v < 0)) {
+    error.textContent =
+      "Please enter valid non-negative amounts in every field.";
+    return;
+  }
+
+  const [sales, cost, operating, other] = values;
+  const totalExpenses = cost + operating + other;
+  const grossProfit = sales - cost;
+  const netProfit = sales - totalExpenses;
+  const margin = sales > 0
+    ? (netProfit / sales) * 100
+    : null;
+
+  if (![totalExpenses, grossProfit, netProfit]
+      .every(Number.isFinite) ||
+      (margin !== null && !Number.isFinite(margin))) {
+    error.textContent = "Amounts are too large to calculate.";
+    return;
+  }
+
+  document.getElementById("revenue").textContent =
+    money(sales);
+  document.getElementById("expenses").textContent =
+    money(totalExpenses);
+  document.getElementById("gross").textContent =
+    money(grossProfit);
+  document.getElementById("net").textContent =
+    money(netProfit);
+  document.getElementById("margin").textContent =
+    margin === null ? "N/A (zero sales)"
+                    : margin.toFixed(2) + "%";
+
+  const status = document.getElementById("status");
+  const net = document.getElementById("net");
+
+  if (netProfit > 0) {
+    status.textContent = "Business is Profitable";
+    status.className = "profit";
+    net.className = "value profit";
+  } else if (netProfit < 0) {
+    status.textContent = "Business is Operating at a Loss";
+    status.className = "loss";
+    net.className = "value loss";
+  } else {
+    status.textContent = "Business is at Break-Even";
+    status.className = "";
+    net.className = "value";
+  }
+
+  results.hidden = false;
+}
+</script>
+</body>
+</html>
